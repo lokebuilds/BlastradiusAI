@@ -397,11 +397,6 @@ ALL 30 TESTS PASSED (100% SUCCESS RATE)
 
 ---
 
-## 📜 License
-Licensed under the Apache License, Version 2.0. Built with pride for the **FalkorDB Graph Hacks Hackathon**.
-
----
-
 ## 🤖 AI & Tooling Disclosure
 
 In adherence to transparency and hackathon engineering integrity standards:
@@ -409,4 +404,11 @@ In adherence to transparency and hackathon engineering integrity standards:
 * **Architecture & System Design:** Co-designed through first-principles architectural reasoning, establishing multi-agent DAG pipelines, Topological Chain-of-Thought (T-CoT) state machines, and FalkorDB multigraph isolation strategies (`ops:sandbox_ephemeral`).
 * **Code Assistance:** AI-assisted programming tools were utilized to accelerate the implementation of the Cytoscape.js interactive visualization HUD, real-time Server-Sent Events (SSE) streaming loops, and the 30-stage automated regression verification test suite ([`scratch/verify_pipeline.py`](scratch/verify_pipeline.py)).
 * **Rigorous Audit & Verification:** All generated code, Cypher queries, FastMCP tool catalogues, and deterministic guardrail logic (`resolve_service()` entity validation and `accepts()` input sanitization) were manually reviewed, stress-tested, and verified against production constraints to ensure zero hallucinations and absolute operational reliability.
+
+---
+
+## 📄 License
+
+Licensed under the Apache License, Version 2.0. Built with pride for the **FalkorDB Graph Hacks Hackathon**.
+
 

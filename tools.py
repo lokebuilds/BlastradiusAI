@@ -18,6 +18,8 @@ FALKORDB_PORT = int(os.getenv("FALKORDB_PORT", "6379"))
 FALKORDB_USERNAME = os.getenv("FALKORDB_USERNAME", None)
 FALKORDB_PASSWORD = os.getenv("FALKORDB_PASSWORD", None)
 FALKORDB_GRAPH = os.getenv("FALKORDB_GRAPH", "cloud_infra")
+FALKORDB_SSL = os.getenv("FALKORDB_SSL", "false").lower() in ("true", "1", "yes")
+
 
 
 class EmbeddedGraphEngine:
@@ -421,10 +423,12 @@ class FalkorDBClient:
 
     def _init_connection(self):
         import socket
-        # Fast 150ms socket pre-check to prevent Windows TCP WinError 10061 timeout hangs
+        # Adaptive pre-check timeout: 150ms for local to prevent Windows TCP hangs; 2.5s for remote FalkorDB Cloud
+        is_local = FALKORDB_HOST in ("localhost", "127.0.0.1", "::1")
+        check_timeout = 0.15 if is_local else 2.5
         is_port_open = False
         try:
-            with socket.create_connection((FALKORDB_HOST, FALKORDB_PORT), timeout=0.15):
+            with socket.create_connection((FALKORDB_HOST, FALKORDB_PORT), timeout=check_timeout):
                 is_port_open = True
         except (socket.timeout, ConnectionRefusedError, OSError):
             is_port_open = False
@@ -437,13 +441,16 @@ class FalkorDBClient:
                     auth_kwargs["username"] = FALKORDB_USERNAME
                 if FALKORDB_PASSWORD:
                     auth_kwargs["password"] = FALKORDB_PASSWORD
+                if FALKORDB_SSL or FALKORDB_PORT == 6380:
+                    auth_kwargs["ssl"] = True
 
                 self.falkor = FalkorDB(**auth_kwargs)
                 self.graph = self.falkor.select_graph(FALKORDB_GRAPH)
                 self.graph.query("RETURN 1")
                 self.is_embedded = False
                 import sys
-                msg = f"[✓] FalkorDB Graph Engine Connected ({FALKORDB_HOST}:{FALKORDB_PORT}) — GraphBLAS & Cypher Ready"
+                cloud_label = " [Cloud]" if not is_local else ""
+                msg = f"[✓] FalkorDB Graph Engine Connected{cloud_label} ({FALKORDB_HOST}:{FALKORDB_PORT}) — GraphBLAS & Cypher Ready"
                 try:
                     print(msg)
                 except UnicodeEncodeError:
@@ -451,8 +458,11 @@ class FalkorDBClient:
                     sys.stdout.flush()
                 logger.info(f"Connected to FalkorDB on {FALKORDB_HOST}:{FALKORDB_PORT} [{FALKORDB_GRAPH}]")
                 return
-            except Exception:
+            except Exception as e:
+                logger.warning(f"FalkorDB connection to {FALKORDB_HOST}:{FALKORDB_PORT} failed ({e}). Falling back to EmbeddedGraphEngine.")
                 self.is_embedded = True
+                self.falkor = None
+                self.graph = None
 
         self.is_embedded = True
         import sys
